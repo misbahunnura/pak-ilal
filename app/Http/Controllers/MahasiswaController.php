@@ -7,10 +7,23 @@ use Illuminate\Http\Request;
 
 class MahasiswaController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $mahasiswas = Mahasiswa::latest()->get();
-        return view('mahasiswa.index', compact('mahasiswas'));
+        $cari = $request->query('cari');
+
+        $mahasiswas = Mahasiswa::query()
+            ->when($cari, function ($query) use ($cari) {
+                $query->where('nama', 'like', "%{$cari}%")
+                      ->orWhere('nim', 'like', "%{$cari}%")
+                      ->orWhere('jurusan', 'like', "%{$cari}%");
+            })
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        $total = Mahasiswa::count();
+
+        return view('mahasiswa.index', compact('mahasiswas', 'cari', 'total'));
     }
 
     public function create()
